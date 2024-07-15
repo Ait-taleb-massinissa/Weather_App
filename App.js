@@ -199,7 +199,8 @@ export default function App() {
                       <Text>{Math.round(hour.temp_c)}°</Text>
                     </View>
                   ))}
-              </ScrollView>
+              </ScrollView> 
+              
             </View>
 
             <View

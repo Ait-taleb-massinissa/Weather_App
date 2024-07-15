@@ -9,13 +9,21 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "date-fns": "^3.6.0",
     "expo": "~51.0.20",
+    "expo-linear-gradient": "^13.0.2",
+    "expo-location": "~17.0.1",
     "expo-status-bar": "~1.12.1",
+    "moment": "^2.30.1",
     "react": "18.2.0",
-    "react-native": "0.74.3"
+    "react-native": "0.74.3",
+    "react-native-dotenv": "^3.4.11",
+    "react-native-localize": "^3.2.0",
+    "react-native-vector-icons": "^10.1.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "babel-plugin-dotenv-import": "^3.0.1"
   },
   "private": true
 }

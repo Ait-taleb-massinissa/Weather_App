@@ -27,7 +27,8 @@ function home({ navigation }) {
   const [minmax, setMinMax] = useState(null);
   const [bgColors, setBgColors] = useState(["#9EC2FF", "#212AA5"]);
   const [suggestions, setSuggestions] = useState([]);
-  const [query, setQuery] = useState("");
+  const [home, setHome] = useState(true);
+  const [map, setMap] = useState("");
 
   useEffect(() => {
     getGps();
@@ -40,13 +41,16 @@ function home({ navigation }) {
     if (where.length < 2) {
       setSuggestions([]);
     } else {
-      console.log(where);
+      console.log(OPENWEATHER_API_KEY);
       await fetch(
-        "http://api.openweathermap.org/geo/1.0/direct?q=${where}&limit=5&appid=" +
+        "http://api.openweathermap.org/geo/1.0/direct?q=" +
+          where +
+          "&limit=5&appid=" +
           OPENWEATHER_API_KEY
       )
-        .then((response) => console.log(response.json))
+        .then((response) => response.json)
         .then((data) => {
+          console.log("data", data);
           setSuggestions(data);
         });
     }
@@ -55,7 +59,6 @@ function home({ navigation }) {
   const handleSuggestionClick = (city) => {
     setWhere(city.name);
     setSuggestions([]);
-    // Maybe trigger weather search here
     search(city.name);
   };
 
@@ -102,6 +105,12 @@ function home({ navigation }) {
   const goToWeatherGps = () => {
     navigation.navigate("Weather");
   };
+  const goToWeatherMap = (mode) => {
+    navigation.navigate("Map", {
+      map: mode,
+      pos: [location.coords.latitude, location.coords.longitude],
+    });
+  };
 
   const [where, setWhere] = useState();
   const [backButton, setBackButton] = useState(false);
@@ -134,63 +143,66 @@ function home({ navigation }) {
         alignItems: "center",
       }}
     >
-      <View style={{ margin: 20 }}>
-        <Text style={styles.title}>Weather</Text>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <View style={styles.searchBar}>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter city"
-              placeholderTextColor={"#FFFFFF7F"}
-              value={where}
-              onChangeText={setWhere}
-              onChange={handleInputChange}
-              onSubmitEditing={() => {
-                goToWeather(where), setBackButton();
-              }}
-              onPress={() => {
-                setBackButton(true);
-              }}
-            />
-            <MaterialIcons
-              name="gps-fixed"
-              size={20}
-              color="#FFFFFF7F"
-              onPress={goToWeatherGps}
-            />
-          </View>
-          {suggestions.length > 0 && (
-            <ul>
-              {suggestions.map((city, index) => (
-                <li key={index} onClick={() => handleSuggestionClick(city)}>
-                  {city.name}, {city.country}
-                </li>
-              ))}
-            </ul>
-          )}
-          <TouchableOpacity
+      {home && (
+        <View style={{ margin: 20 }}>
+          <Text style={styles.title}>Weather</Text>
+          <View
             style={{
-              display: backButton ? "flex" : "none",
-              width: "20%",
-              paddingLeft: 20,
-            }}
-            onPress={() => {
-              Keyboard.dismiss();
-              setWhere("");
-              setBackButton(false);
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            <Text style={{ color: "white" }}>back</Text>
-          </TouchableOpacity>
+            <View style={styles.searchBar}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter city"
+                placeholderTextColor={"#FFFFFF7F"}
+                value={where}
+                onChangeText={setWhere}
+                onChange={handleInputChange}
+                onSubmitEditing={() => {
+                  goToWeather(where), setBackButton();
+                }}
+                onPress={() => {
+                  setBackButton(true);
+                }}
+              />
+              <MaterialIcons
+                name="gps-fixed"
+                size={20}
+                color="#FFFFFF7F"
+                onPress={goToWeatherGps}
+              />
+            </View>
+            {suggestions.length > 0 && (
+              <ul>
+                {suggestions.map((city, index) => (
+                  <li key={index} onClick={() => handleSuggestionClick(city)}>
+                    {city.name}, {city.country}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <TouchableOpacity
+              style={{
+                display: backButton ? "flex" : "none",
+                width: "20%",
+                paddingLeft: 20,
+              }}
+              onPress={() => {
+                Keyboard.dismiss();
+                setWhere("");
+                setBackButton(false);
+              }}
+            >
+              <Text style={{ color: "white" }}>back</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-      {data && minmax && (
+      )}
+      {data && minmax && home && (
         <TouchableOpacity
           onPress={() => {
             goToWeather(data.location.region);
@@ -206,6 +218,186 @@ function home({ navigation }) {
           />
         </TouchableOpacity>
       )}
+
+      {map && (
+        <SafeAreaView
+          style={{
+            flex: 1,
+            backgroundColor: "black",
+            alignItems: "center",
+            paddingVertical: 40,
+            justifyContent: "center",
+          }}
+        >
+          <TouchableOpacity
+            style={{
+              width: 300,
+              backgroundColor: "#1f1f1f",
+              paddingVertical: 15,
+              marginVertical: 10,
+              borderRadius: 10,
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#333",
+            }}
+            onPress={() => {
+              goToWeatherMap("temp_new");
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+                fontWeight: "bold",
+              }}
+            >
+              Temperature Map
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              width: 300,
+              backgroundColor: "#1f1f1f",
+              paddingVertical: 15,
+              marginVertical: 10,
+              borderRadius: 10,
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#333",
+            }}
+            onPress={() => {
+              goToWeatherMap("precipitation_new");
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+                fontWeight: "bold",
+              }}
+            >
+              Precipitation Map
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              width: 300,
+              backgroundColor: "#1f1f1f",
+              paddingVertical: 15,
+              marginVertical: 10,
+              borderRadius: 10,
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#333",
+            }}
+            onPress={() => {
+              goToWeatherMap("wind_new");
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+                fontWeight: "bold",
+              }}
+            >
+              Wind Map
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={{
+              width: 300,
+              backgroundColor: "#1f1f1f",
+              paddingVertical: 15,
+              marginVertical: 10,
+              borderRadius: 10,
+              alignItems: "center",
+              borderWidth: 1,
+              borderColor: "#333",
+            }}
+            onPress={() => {
+              goToWeatherMap("clouds_new");
+            }}
+          >
+            <Text
+              style={{
+                color: "white",
+                fontSize: 18,
+                fontWeight: "bold",
+              }}
+            >
+              Clouds Map
+            </Text>
+          </TouchableOpacity>
+        </SafeAreaView>
+      )}
+
+      <View
+        style={{
+          position: "absolute",
+          flexDirection: "row",
+          bottom: 30,
+          alignItems: "center",
+          justifyContent: "space-evenly",
+          width: "100%",
+          marginTop: 20,
+          backgroundColor: "#FFFFFF1F",
+        }}
+      >
+        <TouchableOpacity
+          onPress={() => {
+            setHome(true);
+            setMap(false);
+          }}
+          style={{
+            width: 150,
+            height: 70,
+            borderRadius: 25,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+          }}
+        >
+          <Text
+            style={{
+              color: "white",
+              fontSize: 20,
+              fontWeight: 700,
+              padding: 0,
+            }}
+          >
+            Home
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setHome(false);
+            setMap(true);
+          }}
+          style={{
+            width: 150,
+            height: 70,
+            borderRadius: 25,
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 0,
+          }}
+        >
+          <Text
+            style={{
+              color: "white",
+              fontSize: 20,
+              fontWeight: 700,
+              padding: 0,
+            }}
+          >
+            Map
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }

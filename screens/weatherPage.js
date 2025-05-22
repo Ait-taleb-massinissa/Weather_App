@@ -46,7 +46,6 @@ function weatherPage({ navigation }) {
     await fetch(currentURL)
       .then((response) => response.json())
       .then((data) => {
-
         setData(data);
         setShowdata(true);
         Conditions.map((cond) => {
@@ -67,7 +66,6 @@ function weatherPage({ navigation }) {
   }
 
   useEffect(() => {
-    
     const getDeviceLanguage = async () => {
       let deviceLanguage = "en";
 
@@ -84,7 +82,7 @@ function weatherPage({ navigation }) {
     };
 
     getDeviceLanguage();
-    if (navigation.getParam("where")!=undefined) {
+    if (navigation.getParam("where") != undefined) {
       Search(navigation.getParam("where"));
     } else {
       (async () => {
@@ -96,11 +94,10 @@ function weatherPage({ navigation }) {
 
         let location = await Location.getCurrentPositionAsync({});
         setLocation(location);
-        console.log(location)
+        console.log(location);
         setLatLon([location.coords.latitude, location.coords.longitude]);
         Search(location.coords.latitude + "," + location.coords.longitude);
       })();
-      
     }
   }, []);
   if (language.startsWith("fr_")) {
@@ -111,7 +108,7 @@ function weatherPage({ navigation }) {
 
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.background}>
-      <LinearGradient colors={bgColors} style={styles.background} >
+      <LinearGradient colors={bgColors} style={styles.background}>
         <SafeAreaView style={styles.screen}>
           {showdata && data && (
             <View style={styles.temps}>
@@ -224,13 +221,11 @@ function weatherPage({ navigation }) {
 
               <View
                 style={{
-                  
                   backgroundColor: "rgba(158, 194, 255, 0.3)",
                   borderRadius: 20,
                   width: 350,
                   padding: 20,
                   marginTop: 20,
-                  
                 }}
               >
                 <ScrollView showsVerticalScrollIndicator={false}>
@@ -250,6 +245,7 @@ function weatherPage({ navigation }) {
                         }}
                       >
                         <View
+                          key={index}
                           style={{
                             flexDirection: "row",
                             justifyContent: "space-between",
@@ -294,14 +290,13 @@ function weatherPage({ navigation }) {
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    minHeight:"100%"
+    minHeight: "100%",
   },
   screen: {
     flex: 1,
     alignItems: "center",
     marginTop: 100,
-    minHeight:690
-
+    minHeight: 690,
   },
   temps: {
     alignItems: "center",

@@ -47,27 +47,41 @@ function home({ navigation }) {
     }
   }, [!location]);
 
-  const handleInputChange = async () => {
-    if (where.length < 2) {
-      setSuggestions([]);
-    } else {
-      await fetch(
+  async function getSugg(query) {
+    if (query.length > 0) {
+      const url =
         "http://api.openweathermap.org/geo/1.0/direct?q=" +
-          where +
-          "&limit=5&appid=" +
-          OPENWEATHER_API_KEY
-      )
-        .then((response) => response.json)
+        query +
+        "&limit=5&appid=fe21e9a36b2135cc1f7adb54f65908b9";
+
+      await fetch(url)
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Network response was not ok");
+          }
+          return response.json();
+        })
         .then((data) => {
-          setSuggestions(data);
+          const formattedSuggestions = data.map((item) => ({
+            name: item.name,
+            state: item.state || "",
+            country: item.country,
+          }));
+
+          setSuggestions(formattedSuggestions);
+          console.log(formattedSuggestions);
         });
     }
-  };
+    if (query.length == 0) {
+      setSuggestions([]);
+    }
+  }
 
   const handleSuggestionClick = (city) => {
-    setWhere(city.name);
+    setWhere("");
     setSuggestions([]);
-    search(city.name);
+    setBackButton(false);
+    goToWeather(city);
   };
 
   async function search(city, gps = false) {
@@ -153,7 +167,7 @@ function home({ navigation }) {
     });
   };
 
-  const [where, setWhere] = useState();
+  const [where, setWhere] = useState("");
   const [backButton, setBackButton] = useState(false);
 
   const styles = {
@@ -200,8 +214,10 @@ function home({ navigation }) {
                 placeholder="Enter city"
                 placeholderTextColor={"#FFFFFF7F"}
                 value={where}
-                onChangeText={setWhere}
-                onChange={handleInputChange}
+                onChangeText={(text) => {
+                  setWhere(text);
+                  getSugg(text);
+                }}
                 onSubmitEditing={() => {
                   goToWeather(where), setBackButton();
                 }}
@@ -216,15 +232,6 @@ function home({ navigation }) {
                 onPress={goToWeatherGps}
               />
             </View>
-            {suggestions.length > 0 && (
-              <ul>
-                {suggestions.map((city, index) => (
-                  <li key={index} onClick={() => handleSuggestionClick(city)}>
-                    {city.name}, {city.country}
-                  </li>
-                ))}
-              </ul>
-            )}
 
             <TouchableOpacity
               style={{
@@ -236,6 +243,7 @@ function home({ navigation }) {
                 Keyboard.dismiss();
                 setWhere("");
                 setBackButton(false);
+                setSuggestions([]);
               }}
             >
               <Text style={{ color: "white" }}>back</Text>
@@ -243,7 +251,35 @@ function home({ navigation }) {
           </View>
         </View>
       )}
-
+      <View
+        style={{
+          backgroundColor: "#000000DF",
+          width: "100%",
+          padding: 10,
+          borderRadius: 10,
+          marginTop: 10,
+          position: "absolute",
+          top: 100,
+          zIndex: 10,
+        }}
+      >
+        {suggestions &&
+          suggestions.map((city) => (
+            <TouchableOpacity
+              key={city + Math.random()}
+              onPress={() => handleSuggestionClick(city.state)}
+              style={{
+                padding: 10,
+                borderBottomWidth: 1,
+                borderBottomColor: "#FFFFFF1F",
+              }}
+            >
+              <Text style={{ color: "white" }}>
+                {city.name}, {city.state}, {city.country}
+              </Text>
+            </TouchableOpacity>
+          ))}
+      </View>
       <ScrollView
         style={{ width: "100%", margin: 0 }}
         contentContainerStyle={{
@@ -254,7 +290,7 @@ function home({ navigation }) {
         {home && gpsData && minmax["gps"] && (
           <TouchableOpacity
             key="gps"
-            onPress={() => goToWeather(gpsData.location.region)}
+            onPress={goToWeatherGps}
             style={{
               marginVertical: 10,
               width: "90%",

@@ -35,6 +35,9 @@ function weatherPage({ navigation }) {
   const Conditions = require("../assets/condition.json");
   const [bgColors, setBgColors] = useState(["#9EC2FF", "#212AA5"]);
   const [fav, setFav] = useState([]);
+  const [gps, setGps] = useState(false);
+  const [showFav, setShowFav] = useState(false);
+  const [showRemove, setShowRemove] = useState(false);
 
   useEffect(() => {
     async function getData(key) {
@@ -123,11 +126,13 @@ function weatherPage({ navigation }) {
 
   useEffect(() => {
     if (data && fav) {
-      console.log("fav", fav, "  city", data.location.name);
-      setShowFav(!fav.includes(data.location.name));
-      setShowRemove(fav.includes(data.location.name));
+      console.log(gps);
+      if (gps == false) {
+        setShowFav(!fav.includes(data.location.name));
+        setShowRemove(fav.includes(data.location.name));
+      }
     }
-  }, [data, fav]);
+  }, [data, fav, gps]);
 
   useEffect(() => {
     const getDeviceLanguage = async () => {
@@ -148,6 +153,7 @@ function weatherPage({ navigation }) {
     getDeviceLanguage();
     if (navigation.getParam("where") != undefined) {
       Search(navigation.getParam("where"));
+      setGps(false);
     } else {
       (async () => {
         let { status } = await Location.requestForegroundPermissionsAsync();
@@ -162,6 +168,7 @@ function weatherPage({ navigation }) {
         setLatLon([location.coords.latitude, location.coords.longitude]);
         Search(location.coords.latitude + "," + location.coords.longitude);
       })();
+      setGps(true);
     }
   }, []);
   if (language.startsWith("fr_")) {
@@ -169,9 +176,6 @@ function weatherPage({ navigation }) {
   } else {
     moment.locale("en");
   }
-
-  const [showFav, setShowFav] = useState(false);
-  const [showRemove, setShowRemove] = useState(false);
 
   const showAlert = () => {
     Alert.alert(

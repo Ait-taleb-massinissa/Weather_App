@@ -16,24 +16,34 @@ import {
   Keyboard,
 } from "react-native";
 import Card from "../Components/card";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Search from "../Search";
 import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
+import { ScrollView } from "react-native";
 
 function home({ navigation }) {
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [data, setData] = useState(null);
-  const [minmax, setMinMax] = useState(null);
+  const [minmax, setMinMax] = useState({});
   const [bgColors, setBgColors] = useState(["#9EC2FF", "#212AA5"]);
   const [suggestions, setSuggestions] = useState([]);
   const [home, setHome] = useState(true);
   const [map, setMap] = useState("");
+  const [favorites, setFavorites] = useState();
+  const [gpsData, setGpsData] = useState(null);
 
   useEffect(() => {
     getGps();
+
     if (location) {
-      search(location.coords.latitude + "," + location.coords.longitude);
+      search(location.coords.latitude + "," + location.coords.longitude, true);
+    }
+
+    if (favorites) {
+      favorites.map((city) => {
+        search(city);
+      });
     }
   }, [!location]);
 
@@ -41,7 +51,6 @@ function home({ navigation }) {
     if (where.length < 2) {
       setSuggestions([]);
     } else {
-      console.log(OPENWEATHER_API_KEY);
       await fetch(
         "http://api.openweathermap.org/geo/1.0/direct?q=" +
           where +
@@ -50,7 +59,6 @@ function home({ navigation }) {
       )
         .then((response) => response.json)
         .then((data) => {
-          console.log("data", data);
           setSuggestions(data);
         });
     }
@@ -62,7 +70,7 @@ function home({ navigation }) {
     search(city.name);
   };
 
-  const search = async (city) => {
+  async function search(city, gps = false) {
     const currentURL =
       "http://api.weatherapi.com/v1/forecast.json?key=" +
       WEATHER_API_KEY +
@@ -71,7 +79,11 @@ function home({ navigation }) {
     await fetch(currentURL)
       .then((response) => response.json())
       .then((data) => {
-        setData(data);
+        if (gps) {
+          setGpsData(data);
+        } else {
+          setData((prevData) => ({ ...prevData, [city]: data }));
+        }
 
         Conditions.map((cond) => {
           if (cond.code == data.current.condition.code) {
@@ -81,11 +93,40 @@ function home({ navigation }) {
 
         data.forecast.forecastday.map((date) => {
           if (date.date == moment().format("YYYY-MM-DD")) {
-            setMinMax([date.day.mintemp_c, date.day.maxtemp_c]);
+            if (gps) {
+              setMinMax((prev) => ({
+                ...prev,
+                gps: [date.day.mintemp_c, date.day.maxtemp_c],
+              }));
+            } else {
+              setMinMax((prev) => ({
+                ...prev,
+                [city]: [date.day.mintemp_c, date.day.maxtemp_c],
+              }));
+            }
           }
         });
       });
-  };
+  }
+
+  async function getFav() {
+    await AsyncStorage.getItem("fav").then((value) => {
+      if (value) {
+        setFavorites(JSON.parse(value));
+        setData({});
+        JSON.parse(value).map((city) => {
+          search(city);
+        });
+      }
+    });
+  }
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("didFocus", () => {
+      getFav();
+    });
+
+    return () => unsubscribe.remove();
+  }, [navigation, data]);
 
   const getGps = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
@@ -202,22 +243,60 @@ function home({ navigation }) {
           </View>
         </View>
       )}
-      {data && minmax && home && (
-        <TouchableOpacity
-          onPress={() => {
-            goToWeather(data.location.region);
-          }}
-        >
-          <Card
-            city={data.location.region}
-            temp={Math.round(data.current.heatindex_c)}
-            condition={data.current.condition.text}
-            min={Math.round(minmax[0])}
-            max={Math.round(minmax[1])}
-            color={bgColors}
-          />
-        </TouchableOpacity>
-      )}
+
+      <ScrollView
+        style={{ width: "100%", margin: 0 }}
+        contentContainerStyle={{
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {home && gpsData && minmax["gps"] && (
+          <TouchableOpacity
+            key="gps"
+            onPress={() => goToWeather(gpsData.location.region)}
+            style={{
+              marginVertical: 10,
+              width: "90%",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Card
+              city={gpsData.location.region}
+              temp={Math.round(gpsData.current.heatindex_c)}
+              condition={gpsData.current.condition.text}
+              min={Math.round(minmax["gps"][0])}
+              max={Math.round(minmax["gps"][1])}
+              color={bgColors}
+            />
+          </TouchableOpacity>
+        )}
+
+        {home &&
+          data &&
+          Object.entries(data).map(([city, weatherData]) => (
+            <TouchableOpacity
+              key={city}
+              onPress={() => goToWeather(weatherData.location.region)}
+              style={{
+                marginVertical: 10,
+                width: "90%",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Card
+                city={weatherData.location.region}
+                temp={Math.round(weatherData.current.heatindex_c)}
+                condition={weatherData.current.condition.text}
+                min={Math.round(minmax[city]?.[0] || 0)}
+                max={Math.round(minmax[city]?.[1] || 0)}
+                color={bgColors}
+              />
+            </TouchableOpacity>
+          ))}
+      </ScrollView>
 
       {map && (
         <SafeAreaView

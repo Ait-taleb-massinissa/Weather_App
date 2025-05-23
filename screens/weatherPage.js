@@ -1,12 +1,13 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { use, useEffect, useState } from "react";
 import moment from "moment";
 import { AntDesign } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { WEATHER_API_KEY } from "@env";
 import "moment/locale/fr";
 import {
+  Alert,
   Button,
   StyleSheet,
   Text,
@@ -20,6 +21,7 @@ import {
   NativeModules,
 } from "react-native";
 import React from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 function weatherPage({ navigation }) {
   const [location, setLocation] = useState(null);
@@ -32,6 +34,59 @@ function weatherPage({ navigation }) {
   const [language, setLanguage] = useState("");
   const Conditions = require("../assets/condition.json");
   const [bgColors, setBgColors] = useState(["#9EC2FF", "#212AA5"]);
+  const [fav, setFav] = useState([]);
+
+  useEffect(() => {
+    async function getData(key) {
+      try {
+        const value = await AsyncStorage.getItem(key).then((value) => {
+          if (value != null) {
+            const parsedValue = JSON.parse(value);
+            setFav(parsedValue);
+          } else {
+            console.log("No data found");
+          }
+        });
+      } catch (error) {
+        console.log("Error retrieving data: ", error);
+      }
+    }
+    getData("fav");
+  }, [!fav]);
+
+  console.log("fav", fav);
+  async function removeData(key, value) {
+    try {
+      const old = await AsyncStorage.getItem(key);
+      if (old != null) {
+        const oldData = JSON.parse(old);
+        const newData = oldData.filter((item) => item !== value);
+        await AsyncStorage.setItem(key, JSON.stringify(newData));
+        console.log("Data removed: ", newData);
+      }
+    } catch (error) {
+      console.log("Error removing data: ", error);
+    }
+  }
+  async function storeData(key, value) {
+    try {
+      const old = await AsyncStorage.getItem(key);
+      if (old == null) {
+        await AsyncStorage.setItem(key, JSON.stringify([value]));
+      } else {
+        if (!old.includes(value)) {
+          const oldData = JSON.parse(old);
+          const newData = [...oldData, value];
+          await AsyncStorage.setItem(key, JSON.stringify(newData));
+          console.log("Data stored: ", newData);
+        } else {
+          console.log("Already in favorites");
+        }
+      }
+    } catch (error) {
+      console.log("Error storing data: ", error);
+    }
+  }
 
   async function Search(city) {
     setShowdata(false);
@@ -48,6 +103,7 @@ function weatherPage({ navigation }) {
       .then((data) => {
         setData(data);
         setShowdata(true);
+
         Conditions.map((cond) => {
           if (cond.code == data.current.condition.code) {
             setBgColors(cond.gradient);
@@ -64,6 +120,14 @@ function weatherPage({ navigation }) {
         console.log(error);
       });
   }
+
+  useEffect(() => {
+    if (data && fav) {
+      console.log("fav", fav, "  city", data.location.name);
+      setShowFav(!fav.includes(data.location.name));
+      setShowRemove(fav.includes(data.location.name));
+    }
+  }, [data, fav]);
 
   useEffect(() => {
     const getDeviceLanguage = async () => {
@@ -106,12 +170,84 @@ function weatherPage({ navigation }) {
     moment.locale("en");
   }
 
+  const [showFav, setShowFav] = useState(false);
+  const [showRemove, setShowRemove] = useState(false);
+
+  const showAlert = () => {
+    Alert.alert(
+      "Are you sure?",
+      "do you want to remove this location from your favorites?",
+      [
+        {
+          text: "Yes",
+          onPress: () => {
+            removeData("fav", data.location.name);
+            setShowFav(true);
+            setShowRemove(false);
+            alert("Removed from favorites");
+          },
+        },
+        {
+          text: "No",
+          onPress: () => console.log("Cancel Pressed"),
+          style: "cancel",
+        },
+      ],
+      { cancelable: true }
+    );
+  };
   return (
     <ScrollView showsVerticalScrollIndicator={false} style={styles.background}>
       <LinearGradient colors={bgColors} style={styles.background}>
         <SafeAreaView style={styles.screen}>
           {showdata && data && (
             <View style={styles.temps}>
+              {showRemove && (
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log("remove");
+                    showAlert();
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 20,
+                      fontWeight: 700,
+                      position: "absolute",
+                      top: -90,
+                      right: -170,
+                    }}
+                  >
+                    remove
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {showFav && (
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log("add");
+                    storeData("fav", data.location.name);
+                    setShowFav(false);
+                    setShowRemove(true);
+                    Alert.alert("Added to favorites");
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "white",
+                      fontSize: 20,
+                      fontWeight: 700,
+                      position: "absolute",
+                      top: -90,
+                      right: -170,
+                    }}
+                  >
+                    Add
+                  </Text>
+                </TouchableOpacity>
+              )}
               <Text style={{ fontSize: 25 }}>{data.location.region}</Text>
 
               <Text style={{ fontSize: 100 }}>
@@ -178,44 +314,45 @@ function weatherPage({ navigation }) {
                 >
                   {showdata &&
                     data &&
-                    data.forecast.forecastday[0].hour.map((hour, index) => (
-                      <>
-                        {moment(data.location.localtime).format(
-                          "yyyy-MM-DD HH"
-                        ) <= moment(hour.time).format("yyyy-MM-DD HH") && (
-                          <View
-                            key={index}
-                            style={{
-                              width: 100,
-                              height: 100,
-                              justifyContent: "center",
-                              alignItems: "center",
-                              borderRadius: 10,
-                              backgroundColor: "rgba(158, 194, 255, 0.5)",
-                              marginLeft: 10,
-                              padding: 10,
+                    data.forecast.forecastday[0].hour.map((hour) => {
+                      const hourMoment = moment(hour.time);
+                      const isFuture = moment(
+                        data.location.localtime
+                      ).isSameOrBefore(hourMoment);
+
+                      return isFuture ? (
+                        <View
+                          key={hour.time}
+                          style={{
+                            width: 100,
+                            height: 100,
+                            justifyContent: "center",
+                            alignItems: "center",
+                            borderRadius: 10,
+                            backgroundColor: "rgba(158, 194, 255, 0.5)",
+                            marginLeft: 10,
+                            padding: 10,
+                          }}
+                        >
+                          <Text>
+                            {moment(data.location.localtime).format(
+                              "yyyy-MM-DD HH"
+                            ) === moment(hour.time).format("yyyy-MM-DD HH")
+                              ? language.startsWith("fr")
+                                ? "Maint."
+                                : "Now."
+                              : moment(hour.time).format("HH") + "h"}
+                          </Text>
+                          <Image
+                            source={{
+                              uri: "https:" + hour.condition.icon,
                             }}
-                          >
-                            <Text>
-                              {moment(data.location.localtime).format(
-                                "yyyy-MM-DD HH"
-                              ) === moment(hour.time).format("yyyy-MM-DD HH")
-                                ? language.startsWith("fr")
-                                  ? "Maint."
-                                  : "Now."
-                                : moment(hour.time).format("HH") + "h"}
-                            </Text>
-                            <Image
-                              source={{
-                                uri: "https:" + hour.condition.icon,
-                              }}
-                              style={{ width: 50, height: 50 }}
-                            />
-                            <Text>{Math.round(hour.temp_c)}°</Text>
-                          </View>
-                        )}
-                      </>
-                    ))}
+                            style={{ width: 50, height: 50 }}
+                          />
+                          <Text>{Math.round(hour.temp_c)}°</Text>
+                        </View>
+                      ) : null;
+                    })}
                 </ScrollView>
               </View>
 
@@ -231,9 +368,9 @@ function weatherPage({ navigation }) {
                 <ScrollView showsVerticalScrollIndicator={false}>
                   {showdata &&
                     data &&
-                    data.forecast.forecastday.map((day, index) => (
+                    data.forecast.forecastday.map((day) => (
                       <View
-                        key={index}
+                        key={day.date}
                         style={{
                           height: 30,
                           borderBottomWidth: 1,
@@ -245,7 +382,6 @@ function weatherPage({ navigation }) {
                         }}
                       >
                         <View
-                          key={index}
                           style={{
                             flexDirection: "row",
                             justifyContent: "space-between",

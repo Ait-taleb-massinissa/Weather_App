@@ -7,6 +7,7 @@ import BackButton from "../Components/backBtn";
 import DropDown from "../Components/dropDown";
 import { MaterialIcons } from "@expo/vector-icons";
 import React, { useRef } from "react";
+import TemperatureLegend from "../Components/TempLegend";
 
 export default function WeatherMap({ navigation }) {
   const API_KEY = "fe21e9a36b2135cc1f7adb54f65908b9";
@@ -108,6 +109,7 @@ export default function WeatherMap({ navigation }) {
           }}
         />
       </MapView>
+      {weatherLayer === "temp_new" && <TemperatureLegend />}
     </SafeAreaView>
   );
 }

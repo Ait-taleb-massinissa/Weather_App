@@ -68,7 +68,6 @@ function home({ navigation }) {
           }));
 
           setSuggestions(formattedSuggestions);
-          console.log(formattedSuggestions);
         });
     }
     if (query.length == 0) {

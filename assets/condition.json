@@ -1,11 +1,11 @@
 [
-    {
-      "code": 1000,
-      "day": "Sunny",
-      "night": "Clear",
-      "icon": 113,
-      "gradient": ["#FFD700", "#87CEEB"]
-    },
+  {
+    "code": 1000,
+    "day": "Sunny",
+    "night": "Clear",
+    "icon": 113,
+    "gradient": ["#87CEFA", "#4682B4"]
+  },
     {
       "code": 1003,
       "day": "Partly cloudy",

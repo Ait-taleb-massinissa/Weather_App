@@ -26,10 +26,9 @@ function home({ navigation }) {
   const [errorMsg, setErrorMsg] = useState(null);
   const [data, setData] = useState(null);
   const [minmax, setMinMax] = useState({});
-  const [bgColors, setBgColors] = useState(["#9EC2FF", "#212AA5"]);
+  const [bgColors, setBgColors] = useState();
   const [suggestions, setSuggestions] = useState([]);
-  const [home, setHome] = useState(true);
-  const [map, setMap] = useState("");
+
   const [favorites, setFavorites] = useState();
   const [gpsData, setGpsData] = useState(null);
 
@@ -78,8 +77,8 @@ function home({ navigation }) {
   }
 
   const handleSuggestionClick = (city) => {
-    setWhere("");
-    setSuggestions([]);
+    setSuggestions(null);
+    setWhere(null);
     setBackButton(false);
     goToWeather(city);
   };
@@ -98,13 +97,6 @@ function home({ navigation }) {
         } else {
           setData((prevData) => ({ ...prevData, [city]: data }));
         }
-
-        Conditions.map((cond) => {
-          if (cond.code == data.current.condition.code) {
-            setBgColors(cond.gradient);
-          }
-        });
-
         data.forecast.forecastday.map((date) => {
           if (date.date == moment().format("YYYY-MM-DD")) {
             if (gps) {
@@ -164,6 +156,7 @@ function home({ navigation }) {
     navigation.navigate("Map", {
       map: mode,
       pos: [location.coords.latitude, location.coords.longitude],
+      where: where,
     });
   };
 
@@ -179,7 +172,6 @@ function home({ navigation }) {
       fontWeight: "600",
     },
     searchBar: {
-      // width: backButton?320:380,
       width: backButton ? "80%" : "100%",
       flexDirection: "row",
       alignItems: "center",
@@ -196,61 +188,61 @@ function home({ navigation }) {
         flex: 1,
         backgroundColor: "black",
         alignItems: "center",
+        marginTop: 50,
       }}
     >
-      {home && (
-        <View style={{ margin: 20 }}>
-          <Text style={styles.title}>Weather</Text>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <View style={styles.searchBar}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter city"
-                placeholderTextColor={"#FFFFFF7F"}
-                value={where}
-                onChangeText={(text) => {
-                  setWhere(text);
-                  getSugg(text);
-                }}
-                onSubmitEditing={() => {
-                  goToWeather(where), setBackButton();
-                }}
-                onPress={() => {
-                  setBackButton(true);
-                }}
-              />
-              <MaterialIcons
-                name="gps-fixed"
-                size={20}
-                color="#FFFFFF7F"
-                onPress={goToWeatherGps}
-              />
-            </View>
-
-            <TouchableOpacity
-              style={{
-                display: backButton ? "flex" : "none",
-                width: "20%",
-                paddingLeft: 20,
+      <View style={{ margin: 20 }}>
+        <Text style={styles.title}>Weather</Text>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <View style={styles.searchBar}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter city"
+              placeholderTextColor={"#FFFFFF7F"}
+              value={where}
+              onChangeText={(text) => {
+                setWhere(text);
+                getSugg(text);
+              }}
+              onSubmitEditing={() => {
+                goToWeather(where), setBackButton(), setSuggestions([]);
               }}
               onPress={() => {
-                Keyboard.dismiss();
-                setWhere("");
-                setBackButton(false);
-                setSuggestions([]);
+                setBackButton(true);
               }}
-            >
-              <Text style={{ color: "white" }}>back</Text>
-            </TouchableOpacity>
+            />
+            <MaterialIcons
+              name="gps-fixed"
+              size={20}
+              color="#FFFFFF7F"
+              onPress={goToWeatherGps}
+            />
           </View>
+
+          <TouchableOpacity
+            style={{
+              display: backButton ? "flex" : "none",
+              width: "20%",
+              paddingLeft: 20,
+            }}
+            onPress={() => {
+              Keyboard.dismiss();
+              setWhere("");
+              setBackButton(false);
+              setSuggestions([]);
+            }}
+          >
+            <Text style={{ color: "white" }}>back</Text>
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
+
       <View
         style={{
           backgroundColor: "#000000DF",
@@ -267,7 +259,11 @@ function home({ navigation }) {
           suggestions.map((city) => (
             <TouchableOpacity
               key={city + Math.random()}
-              onPress={() => handleSuggestionClick(city.state)}
+              onPress={() =>
+                city.state
+                  ? handleSuggestionClick(city.state)
+                  : handleSuggestionClick(city.name)
+              }
               style={{
                 padding: 10,
                 borderBottomWidth: 1,
@@ -287,7 +283,7 @@ function home({ navigation }) {
           justifyContent: "center",
         }}
       >
-        {home && gpsData && minmax["gps"] && (
+        {gpsData && minmax["gps"] && (
           <TouchableOpacity
             key="gps"
             onPress={goToWeatherGps}
@@ -304,215 +300,38 @@ function home({ navigation }) {
               condition={gpsData.current.condition.text}
               min={Math.round(minmax["gps"][0])}
               max={Math.round(minmax["gps"][1])}
-              color={bgColors}
+              color={gpsData.current.condition.code}
+              gps={true}
             />
           </TouchableOpacity>
         )}
 
-        {home &&
-          data &&
-          Object.entries(data).map(([city, weatherData]) => (
-            <TouchableOpacity
-              key={city}
-              onPress={() => goToWeather(weatherData.location.region)}
-              style={{
-                marginVertical: 10,
-                width: "90%",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Card
-                city={weatherData.location.region}
-                temp={Math.round(weatherData.current.heatindex_c)}
-                condition={weatherData.current.condition.text}
-                min={Math.round(minmax[city]?.[0] || 0)}
-                max={Math.round(minmax[city]?.[1] || 0)}
-                color={bgColors}
-              />
-            </TouchableOpacity>
-          ))}
+        {data &&
+          Object.entries(data)
+            .sort()
+            .map(([city, weatherData]) => (
+              <TouchableOpacity
+                key={city}
+                onPress={() => goToWeather(weatherData.location.region)}
+                style={{
+                  marginVertical: 10,
+                  width: "90%",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Card
+                  city={weatherData.location.region}
+                  temp={Math.round(weatherData.current.heatindex_c)}
+                  condition={weatherData.current.condition.text}
+                  min={Math.round(minmax[city]?.[0] || 0)}
+                  max={Math.round(minmax[city]?.[1] || 0)}
+                  color={weatherData.current.condition.code}
+                  gps={false}
+                />
+              </TouchableOpacity>
+            ))}
       </ScrollView>
-
-      {map && (
-        <SafeAreaView
-          style={{
-            flex: 1,
-            backgroundColor: "black",
-            alignItems: "center",
-            paddingVertical: 40,
-            justifyContent: "center",
-          }}
-        >
-          <TouchableOpacity
-            style={{
-              width: 300,
-              backgroundColor: "#1f1f1f",
-              paddingVertical: 15,
-              marginVertical: 10,
-              borderRadius: 10,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#333",
-            }}
-            onPress={() => {
-              goToWeatherMap("temp_new");
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 18,
-                fontWeight: "bold",
-              }}
-            >
-              Temperature Map
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              width: 300,
-              backgroundColor: "#1f1f1f",
-              paddingVertical: 15,
-              marginVertical: 10,
-              borderRadius: 10,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#333",
-            }}
-            onPress={() => {
-              goToWeatherMap("precipitation_new");
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 18,
-                fontWeight: "bold",
-              }}
-            >
-              Precipitation Map
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              width: 300,
-              backgroundColor: "#1f1f1f",
-              paddingVertical: 15,
-              marginVertical: 10,
-              borderRadius: 10,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#333",
-            }}
-            onPress={() => {
-              goToWeatherMap("wind_new");
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 18,
-                fontWeight: "bold",
-              }}
-            >
-              Wind Map
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={{
-              width: 300,
-              backgroundColor: "#1f1f1f",
-              paddingVertical: 15,
-              marginVertical: 10,
-              borderRadius: 10,
-              alignItems: "center",
-              borderWidth: 1,
-              borderColor: "#333",
-            }}
-            onPress={() => {
-              goToWeatherMap("clouds_new");
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 18,
-                fontWeight: "bold",
-              }}
-            >
-              Clouds Map
-            </Text>
-          </TouchableOpacity>
-        </SafeAreaView>
-      )}
-
-      <View
-        style={{
-          position: "absolute",
-          flexDirection: "row",
-          bottom: 30,
-          alignItems: "center",
-          justifyContent: "space-evenly",
-          width: "100%",
-          marginTop: 20,
-          backgroundColor: "#FFFFFF1F",
-        }}
-      >
-        <TouchableOpacity
-          onPress={() => {
-            setHome(true);
-            setMap(false);
-          }}
-          style={{
-            width: 150,
-            height: 70,
-            borderRadius: 25,
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 20,
-              fontWeight: 700,
-              padding: 0,
-            }}
-          >
-            Home
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => {
-            setHome(false);
-            setMap(true);
-          }}
-          style={{
-            width: 150,
-            height: 70,
-            borderRadius: 25,
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 0,
-          }}
-        >
-          <Text
-            style={{
-              color: "white",
-              fontSize: 20,
-              fontWeight: 700,
-              padding: 0,
-            }}
-          >
-            Map
-          </Text>
-        </TouchableOpacity>
-      </View>
     </SafeAreaView>
   );
 }

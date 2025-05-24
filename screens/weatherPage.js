@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { use, useEffect, useState } from "react";
 import moment from "moment";
-import { AntDesign } from "@expo/vector-icons";
+import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { WEATHER_API_KEY } from "@env";
 import "moment/locale/fr";
@@ -22,6 +22,8 @@ import {
 } from "react-native";
 import React from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import MiniMap from "../Components/miniMap";
+import BackButton from "../Components/backBtn";
 
 function weatherPage({ navigation }) {
   const [location, setLocation] = useState(null);
@@ -55,9 +57,8 @@ function weatherPage({ navigation }) {
       }
     }
     getData("fav");
-  }, [!fav]);
+  }, [fav]);
 
-  console.log("fav", fav);
   async function removeData(key, value) {
     try {
       const old = await AsyncStorage.getItem(key);
@@ -126,7 +127,6 @@ function weatherPage({ navigation }) {
 
   useEffect(() => {
     if (data && fav) {
-      console.log(gps);
       if (gps == false) {
         setShowFav(!fav.includes(data.location.name));
         setShowRemove(fav.includes(data.location.name));
@@ -164,7 +164,7 @@ function weatherPage({ navigation }) {
 
         let location = await Location.getCurrentPositionAsync({});
         setLocation(location);
-        console.log(location);
+
         setLatLon([location.coords.latitude, location.coords.longitude]);
         Search(location.coords.latitude + "," + location.coords.longitude);
       })();
@@ -200,12 +200,36 @@ function weatherPage({ navigation }) {
       { cancelable: true }
     );
   };
+
+  const goToWeatherMap = () => {
+    navigation.navigate("Map", {
+      pos: [data.location.lat, data.location.lon],
+      map: "temp_new",
+    });
+  };
+
   return (
-    <ScrollView showsVerticalScrollIndicator={false} style={styles.background}>
-      <LinearGradient colors={bgColors} style={styles.background}>
-        <SafeAreaView style={styles.screen}>
-          {showdata && data && (
-            <View style={styles.temps}>
+    <SafeAreaView style={styles.background}>
+      <LinearGradient colors={bgColors}>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          <SafeAreaView style={styles.screen}>
+            <View
+              style={{
+                position: "absolute",
+                top: -90,
+                left: 5,
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                width: "95%",
+              }}
+            >
+              <BackButton
+                onPress={() => {
+                  navigation.goBack();
+                }}
+              />
               {showRemove && (
                 <TouchableOpacity
                   onPress={() => {
@@ -218,9 +242,10 @@ function weatherPage({ navigation }) {
                       color: "white",
                       fontSize: 20,
                       fontWeight: 700,
-                      position: "absolute",
-                      top: -90,
-                      right: -170,
+
+                      shadowColor: "black",
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.3,
                     }}
                   >
                     remove
@@ -243,200 +268,412 @@ function weatherPage({ navigation }) {
                       color: "white",
                       fontSize: 20,
                       fontWeight: 700,
-                      position: "absolute",
-                      top: -90,
-                      right: -170,
+
+                      shadowColor: "black",
+                      shadowOffset: { width: 0, height: 0 },
+                      shadowOpacity: 0.3,
                     }}
                   >
                     Add
                   </Text>
                 </TouchableOpacity>
               )}
-              <Text style={{ fontSize: 25 }}>{data.location.region}</Text>
+            </View>
+            {showdata && data && (
+              <View style={styles.temps}>
+                <Text
+                  style={{
+                    fontSize: 25,
+                    color: "white",
+                    shadowColor: "black",
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.3,
+                  }}
+                >
+                  {data.location.region}
+                </Text>
 
-              <Text style={{ fontSize: 100 }}>
-                {Math.round(data.current.heatindex_c)}°
-              </Text>
-              {/* <Image
+                <Text
+                  style={{
+                    fontSize: 90,
+                    color: "white",
+                    shadowColor: "black",
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.3,
+                    justifyContent: "center",
+                    alignContent: "center",
+                    paddingLeft: 30,
+                    textAlign: "center",
+                  }}
+                >
+                  {Math.round(data.current.heatindex_c)}°
+                </Text>
+
+                {/* <Image
                 source={{ uri: "https:" + data.current.condition.icon }}
                 style={{ width: 150, height: 150 }}
               /> */}
-              <Text> {data.current.condition.text} </Text>
-              {minmax && (
-                <View
+                <Text
                   style={{
-                    flexDirection: "row",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    margin: 20,
+                    color: "white",
+                    shadowColor: "black",
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: 0.3,
                   }}
                 >
+                  {" "}
+                  {data.current.condition.text}{" "}
+                </Text>
+                {minmax && (
                   <View
                     style={{
                       flexDirection: "row",
-                      justifyContent: "space-between",
+                      justifyContent: "center",
                       alignItems: "center",
-                      width: 100,
+                      margin: 20,
                     }}
                   >
                     <View
                       style={{
                         flexDirection: "row",
-                        justifyContent: "center",
+                        justifyContent: "space-between",
                         alignItems: "center",
+                        width: 100,
+                        color: "white",
+                        shadowColor: "black",
+                        shadowOffset: { width: 0, height: 0 },
+                        shadowOpacity: 0.3,
                       }}
                     >
-                      <AntDesign name="arrowdown" size={24} color="black" />
-                      <Text>{Math.round(minmax[0])}</Text>
-                    </View>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                    >
-                      <AntDesign name="arrowup" size={24} color="black" />
-                      <Text>{Math.round(minmax[1])}</Text>
-                    </View>
-                  </View>
-                </View>
-              )}
-
-              <View
-                style={{
-                  height: 150,
-                  backgroundColor: "rgba(158, 194, 255, 0.3)",
-                  borderRadius: 20,
-                  width: 350,
-                  padding: 20,
-                }}
-              >
-                <ScrollView
-                  horizontal={true}
-                  showsHorizontalScrollIndicator={false}
-                >
-                  {showdata &&
-                    data &&
-                    data.forecast.forecastday[0].hour.map((hour) => {
-                      const hourMoment = moment(hour.time);
-                      const isFuture = moment(
-                        data.location.localtime
-                      ).isSameOrBefore(hourMoment);
-
-                      return isFuture ? (
-                        <View
-                          key={hour.time}
-                          style={{
-                            width: 100,
-                            height: 100,
-                            justifyContent: "center",
-                            alignItems: "center",
-                            borderRadius: 10,
-                            backgroundColor: "rgba(158, 194, 255, 0.5)",
-                            marginLeft: 10,
-                            padding: 10,
-                          }}
-                        >
-                          <Text>
-                            {moment(data.location.localtime).format(
-                              "yyyy-MM-DD HH"
-                            ) === moment(hour.time).format("yyyy-MM-DD HH")
-                              ? language.startsWith("fr")
-                                ? "Maint."
-                                : "Now."
-                              : moment(hour.time).format("HH") + "h"}
-                          </Text>
-                          <Image
-                            source={{
-                              uri: "https:" + hour.condition.icon,
-                            }}
-                            style={{ width: 50, height: 50 }}
-                          />
-                          <Text>{Math.round(hour.temp_c)}°</Text>
-                        </View>
-                      ) : null;
-                    })}
-                </ScrollView>
-              </View>
-
-              <View
-                style={{
-                  backgroundColor: "rgba(158, 194, 255, 0.3)",
-                  borderRadius: 20,
-                  width: 350,
-                  padding: 20,
-                  marginTop: 20,
-                }}
-              >
-                <ScrollView showsVerticalScrollIndicator={false}>
-                  {showdata &&
-                    data &&
-                    data.forecast.forecastday.map((day) => (
                       <View
-                        key={day.date}
                         style={{
-                          height: 30,
-                          borderBottomWidth: 1,
-                          borderBottomColor: "rgba(250, 250, 250, 0.3)",
                           flexDirection: "row",
-                          justifyContent: "space-evenly",
-                          padding: 5,
+                          justifyContent: "center",
                           alignItems: "center",
                         }}
                       >
-                        <View
+                        <AntDesign
+                          name="arrowdown"
+                          size={24}
+                          color="white"
                           style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            width: 200,
+                            color: "white",
+                            shadowColor: "black",
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.3,
+                          }}
+                        />
+                        <Text
+                          style={{
+                            color: "white",
+                            shadowColor: "black",
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.3,
                           }}
                         >
-                          <Text>
-                            {moment(new Date()).format("yyyy-MM-DD") == day.date
-                              ? language.startsWith("fr")
-                                ? "Auj."
-                                : "Today"
-                              : moment(day.date).format("ddd")}
-                          </Text>
-
-                          <Image
-                            source={{
-                              uri: "https:" + day.day.condition.icon,
-                            }}
-                            style={{ width: 40, height: 40 }}
-                          />
-                        </View>
-                        <Text style={{ color: "lightgrey", fontWeight: 600 }}>
-                          {Math.round(day.day.mintemp_c)}°
-                        </Text>
-                        <Text style={{ fontWeight: 600 }}>
-                          {Math.round(day.day.maxtemp_c)}°
+                          {Math.round(minmax[0])}
                         </Text>
                       </View>
-                    ))}
-                </ScrollView>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                      >
+                        <AntDesign
+                          name="arrowup"
+                          size={24}
+                          color="white"
+                          style={{
+                            color: "white",
+                            shadowColor: "black",
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.3,
+                          }}
+                        />
+                        <Text
+                          style={{
+                            color: "white",
+                            shadowColor: "black",
+                            shadowOffset: { width: 0, height: 0 },
+                            shadowOpacity: 0.3,
+                          }}
+                        >
+                          {Math.round(minmax[1])}
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
+
+                <View
+                  style={{
+                    height: 160,
+                    backgroundColor: "rgba(158, 194, 255, 0.3)",
+                    borderRadius: 20,
+                    width: 350,
+                    padding: 20,
+                  }}
+                >
+                  <View
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      top: -10,
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name="clock"
+                      size={20}
+                      color={"rgba(70, 93, 124, 0.48)"}
+                    />
+                    <Text
+                      style={{
+                        color: "rgba(70, 93, 124, 0.48)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Next hour prevision
+                    </Text>
+                  </View>
+                  <ScrollView
+                    horizontal={true}
+                    showsHorizontalScrollIndicator={false}
+                  >
+                    {showdata &&
+                      data &&
+                      data.forecast.forecastday[0].hour.map((hour) => {
+                        const hourMoment = moment(hour.time);
+                        const isFuture = moment(
+                          data.location.localtime
+                        ).isSameOrBefore(hourMoment);
+
+                        return isFuture ? (
+                          <View
+                            key={hour.time}
+                            style={{
+                              width: 100,
+                              height: 100,
+                              justifyContent: "center",
+                              alignItems: "center",
+                              borderRadius: 10,
+                              backgroundColor: "rgba(158, 194, 255, 0.5)",
+                              marginLeft: 10,
+                              padding: 10,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                fontWeight: 600,
+                                color: "white",
+                                shadowColor: "black",
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: 0.3,
+                              }}
+                            >
+                              {moment(data.location.localtime).format(
+                                "yyyy-MM-DD HH"
+                              ) === moment(hour.time).format("yyyy-MM-DD HH")
+                                ? language.startsWith("fr")
+                                  ? "Maint."
+                                  : "Now."
+                                : moment(hour.time).format("HH") + "h"}
+                            </Text>
+                            <Image
+                              source={{
+                                uri: "https:" + hour.condition.icon,
+                              }}
+                              style={{ width: 50, height: 50 }}
+                            />
+                            <Text
+                              style={{
+                                fontWeight: 600,
+                                color: "white",
+                                shadowColor: "black",
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: 0.3,
+                              }}
+                            >
+                              {Math.round(hour.temp_c)}°
+                            </Text>
+                          </View>
+                        ) : null;
+                      })}
+                  </ScrollView>
+                </View>
+
+                <View
+                  style={{
+                    backgroundColor: "rgba(158, 194, 255, 0.3)",
+                    borderRadius: 20,
+                    width: 350,
+                    padding: 20,
+                    marginTop: 20,
+                  }}
+                >
+                  <View
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      top: -10,
+                    }}
+                  >
+                    <MaterialCommunityIcons
+                      name="calendar-range"
+                      size={20}
+                      color={"rgba(70, 93, 124, 0.48)"}
+                    />
+                    <Text
+                      style={{
+                        color: "rgba(70, 93, 124, 0.48)",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Next days prevision
+                    </Text>
+                  </View>
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    {showdata &&
+                      data &&
+                      data.forecast.forecastday.map((day) => (
+                        <View
+                          key={day.date}
+                          style={{
+                            height: 30,
+                            borderBottomWidth: 1,
+                            borderBottomColor: "rgba(250, 250, 250, 0.3)",
+                            flexDirection: "row",
+                            justifyContent: "space-evenly",
+                            padding: 5,
+                            alignItems: "center",
+                          }}
+                        >
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              width: 200,
+                            }}
+                          >
+                            <Text
+                              style={{
+                                color: "white",
+                                fontWeight: 600,
+                                shadowColor: "black",
+                                shadowOffset: { width: 0, height: 0 },
+                                shadowOpacity: 0.3,
+                              }}
+                            >
+                              {moment(new Date()).format("yyyy-MM-DD") ==
+                              day.date
+                                ? language.startsWith("fr")
+                                  ? "Auj."
+                                  : "Today"
+                                : moment(day.date).format("ddd")}
+                            </Text>
+
+                            <Image
+                              source={{
+                                uri: "https:" + day.day.condition.icon,
+                              }}
+                              style={{ width: 40, height: 40 }}
+                            />
+                          </View>
+                          <Text
+                            style={{
+                              color: "rgba(250, 250, 250, 0.74)",
+                              fontWeight: 600,
+                              shadowColor: "black",
+                              shadowOffset: { width: 0, height: 0 },
+                              shadowOpacity: 0.3,
+                            }}
+                          >
+                            {Math.round(day.day.mintemp_c)}°
+                          </Text>
+                          <Text
+                            style={{
+                              fontWeight: 600,
+                              color: "white",
+                              shadowColor: "black",
+                              shadowOffset: { width: 0, height: 0 },
+                              shadowOpacity: 0.3,
+                            }}
+                          >
+                            {Math.round(day.day.maxtemp_c)}°
+                          </Text>
+                        </View>
+                      ))}
+                  </ScrollView>
+                </View>
               </View>
-            </View>
-          )}
-          <StatusBar style="auto" />
-        </SafeAreaView>
+            )}
+            {data && (
+              <View
+                style={{
+                  backgroundColor: "rgba(158, 194, 255, 0.3)",
+                  borderRadius: 20,
+                  width: 350,
+
+                  marginTop: 20,
+                }}
+              >
+                <View
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    alignItems: "center",
+                    top: 10,
+                    left: 20,
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name="map"
+                    size={20}
+                    color={"rgba(70, 93, 124, 0.48)"}
+                  />
+                  <Text
+                    style={{
+                      color: "rgba(70, 93, 124, 0.48)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Temperature map
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={{
+                    borderRadius: 20,
+                    width: "100%",
+                    padding: 20,
+                  }}
+                  onPress={goToWeatherMap}
+                >
+                  <MiniMap lat={data.location.lat} lon={data.location.lon} />
+                </TouchableOpacity>
+              </View>
+            )}
+          </SafeAreaView>
+        </ScrollView>
       </LinearGradient>
-    </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    minHeight: "100%",
   },
   screen: {
     flex: 1,
     alignItems: "center",
     marginTop: 100,
     minHeight: 690,
+    color: "white",
   },
   temps: {
     alignItems: "center",

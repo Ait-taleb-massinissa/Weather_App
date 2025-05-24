@@ -7,12 +7,21 @@ import Map from "../screens/weathermap";
 const screens = {
   Home: {
     screen: Home,
+    navigationOptions: {
+      headerShown: false,
+    },
   },
   Weather: {
     screen: Weather,
+    navigationOptions: {
+      headerShown: false,
+    },
   },
   Map: {
     screen: Map,
+    navigationOptions: {
+      headerShown: false,
+    },
   },
 };
 

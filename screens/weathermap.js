@@ -1,4 +1,5 @@
 import MapView, { UrlTile, Marker } from "react-native-maps";
+// Importation des composants et bibliothèques nécessaires
 import { StyleSheet, View, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { use, useEffect } from "react";
@@ -10,11 +11,15 @@ import React, { useRef } from "react";
 import TemperatureLegend from "../Components/TempLegend";
 
 export default function WeatherMap({ navigation }) {
+  // Clé API pour OpenWeatherMap
   const API_KEY = "fe21e9a36b2135cc1f7adb54f65908b9";
 
+  // État pour gérer la couche météo sélectionnée
   const [weatherLayer, setWeatherLayer] = useState(navigation.getParam("map"));
+  // Position transmise via les paramètres de navigation
   const position = navigation.getParam("pos");
 
+  // Options pour le menu déroulant permettant de sélectionner les couches météo
   const options = [
     { name: "temperature", value: "temp_new", icon: "thermometer" },
     { name: "clouds", value: "clouds_new", icon: "weather-cloudy" },
@@ -26,8 +31,10 @@ export default function WeatherMap({ navigation }) {
     },
   ];
 
+  // Référence au composant MapView
   const mapRef = useRef(null);
 
+  // Fonction pour réinitialiser la position de la carte à la position initiale
   const resetLocation = () => {
     mapRef.current.animateToRegion(
       {
@@ -42,6 +49,7 @@ export default function WeatherMap({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* En-tête avec bouton retour et menu déroulant */}
       <View
         style={{
           zIndex: 10,
@@ -64,6 +72,7 @@ export default function WeatherMap({ navigation }) {
           onSelect={(option) => setWeatherLayer(option.value)}
         />
       </View>
+      {/* Bouton pour réinitialiser la position de la carte */}
       <TouchableOpacity
         style={{
           position: "absolute",
@@ -81,6 +90,7 @@ export default function WeatherMap({ navigation }) {
       >
         <MaterialIcons name="gps-fixed" size={24} color="white" />
       </TouchableOpacity>
+      {/* MapView affichant les couches météo */}
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -92,6 +102,7 @@ export default function WeatherMap({ navigation }) {
           longitudeDelta: 0.03,
         }}
       >
+        {/* Tuiles de la couche météo */}
         <UrlTile
           urlTemplate={
             "https://tile.openweathermap.org/map/" +
@@ -102,6 +113,7 @@ export default function WeatherMap({ navigation }) {
           maximumZ={19}
           flipY={false}
         />
+        {/* Marqueur pour la position initiale */}
         <Marker
           coordinate={{
             latitude: position[0],
@@ -109,11 +121,13 @@ export default function WeatherMap({ navigation }) {
           }}
         />
       </MapView>
+      {/* Affiche la légende de température si la couche température est sélectionnée */}
       {weatherLayer === "temp_new" && <TemperatureLegend />}
     </SafeAreaView>
   );
 }
 
+// Styles pour le conteneur et la carte
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
@@ -125,6 +139,7 @@ const styles = StyleSheet.create({
   },
 });
 
+// Style personnalisé pour une carte en thème clair
 const lightMapStyle = [
   {
     elementType: "geometry",

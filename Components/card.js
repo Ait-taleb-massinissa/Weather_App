@@ -1,11 +1,17 @@
+// Importation des modules nécessaires
 import React, { use } from "react";
 import { Text, View } from "react-native";
 import { AntDesign } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 const Conditions = require("../assets/condition.json");
 import { useState, useEffect } from "react";
+
+// Définition du composant `card`
 function card(props) {
+  // État pour gérer les couleurs de fond basées sur les conditions météo
   const [bgColors, setBgColors] = useState(["#9EC2FF", "#212AA5"]);
+
+  // Mise à jour des couleurs de fond en fonction du code météo reçu via les props
   useEffect(() => {
     Conditions.map((cond) => {
       if (cond.code == props.color) {
@@ -14,6 +20,7 @@ function card(props) {
     });
   }, [props.color]);
 
+  // Rendu du composant
   return (
     <LinearGradient
       style={{
@@ -21,8 +28,9 @@ function card(props) {
         height: 150,
         borderRadius: 25,
       }}
-      colors={bgColors}
+      colors={bgColors} // Couleurs de fond dynamiques
     >
+      {/* Affichage du nom de la ville */}
       <Text
         style={{
           fontSize: 20,
@@ -36,6 +44,8 @@ function card(props) {
       >
         {props.city}
       </Text>
+
+      {/* Affichage de l'indicateur de position GPS si applicable */}
       {props.gps && (
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text
@@ -65,6 +75,8 @@ function card(props) {
           />
         </View>
       )}
+
+      {/* Affichage de la température actuelle */}
       <Text
         style={{
           position: "absolute",
@@ -80,6 +92,8 @@ function card(props) {
       >
         {props.temp}°
       </Text>
+
+      {/* Affichage de la condition météo */}
       <Text
         style={{
           position: "absolute",
@@ -96,6 +110,7 @@ function card(props) {
         {props.condition}
       </Text>
 
+      {/* Affichage des températures minimales et maximales */}
       <View
         style={{
           flexDirection: "row",
@@ -105,6 +120,7 @@ function card(props) {
           margin: 20,
         }}
       >
+        {/* Température minimale */}
         <View
           style={{
             flexDirection: "row",
@@ -132,6 +148,8 @@ function card(props) {
             {props.min}°
           </Text>
         </View>
+
+        {/* Température maximale */}
         <View
           style={{
             flexDirection: "row",

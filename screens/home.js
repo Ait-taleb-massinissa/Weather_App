@@ -21,31 +21,38 @@ import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { ScrollView } from "react-native";
 
 function home({ navigation }) {
+  // Clé API pour accéder aux données météo
   const WEATHER_API_KEY = "5f7f2be2f23a4bd395c185814241407";
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [data, setData] = useState(null);
-  const [minmax, setMinMax] = useState({});
-  const [bgColors, setBgColors] = useState();
-  const [suggestions, setSuggestions] = useState([]);
 
-  const [favorites, setFavorites] = useState();
-  const [gpsData, setGpsData] = useState(null);
+  // États pour gérer les données et l'état de l'application
+  const [location, setLocation] = useState(null); // Stocke la position GPS
+  const [errorMsg, setErrorMsg] = useState(null); // Stocke les messages d'erreur
+  const [data, setData] = useState(null); // Stocke les données météo
+  const [minmax, setMinMax] = useState({}); // Stocke les températures minimales et maximales
+  const [bgColors, setBgColors] = useState(); // Couleurs de fond (non utilisé ici)
+  const [suggestions, setSuggestions] = useState([]); // Suggestions pour la recherche de villes
 
+  const [favorites, setFavorites] = useState(); // Liste des villes favorites
+  const [gpsData, setGpsData] = useState(null); // Données météo pour la position GPS
+
+  // Effet pour récupérer la position GPS et les données météo au démarrage
   useEffect(() => {
     getGps();
 
     if (location) {
+      // Recherche des données météo pour la position GPS
       search(location.coords.latitude + "," + location.coords.longitude, true);
     }
 
     if (favorites) {
+      // Recherche des données météo pour les villes favorites
       favorites.map((city) => {
         search(city);
       });
     }
   }, [!location]);
 
+  // Fonction pour obtenir des suggestions de villes en fonction de la recherche
   async function getSugg(query) {
     if (query.length > 0) {
       const url =
@@ -61,6 +68,7 @@ function home({ navigation }) {
           return response.json();
         })
         .then((data) => {
+          // Formate les suggestions pour l'affichage
           const formattedSuggestions = data.map((item) => ({
             name: item.name,
             state: item.state || "",
@@ -71,17 +79,19 @@ function home({ navigation }) {
         });
     }
     if (query.length == 0) {
-      setSuggestions([]);
+      setSuggestions([]); // Réinitialise les suggestions si la recherche est vide
     }
   }
 
+  // Gère le clic sur une suggestion de ville
   const handleSuggestionClick = (city) => {
     setSuggestions(null);
     setWhere(null);
     setBackButton(false);
-    goToWeather(city);
+    goToWeather(city); // Navigue vers l'écran météo pour la ville sélectionnée
   };
 
+  // Fonction pour rechercher les données météo pour une ville
   async function search(city, gps = false) {
     const currentURL =
       "http://api.weatherapi.com/v1/forecast.json?key=" +
@@ -92,10 +102,11 @@ function home({ navigation }) {
       .then((response) => response.json())
       .then((data) => {
         if (gps) {
-          setGpsData(data);
+          setGpsData(data); // Stocke les données GPS
         } else {
-          setData((prevData) => ({ ...prevData, [city]: data }));
+          setData((prevData) => ({ ...prevData, [city]: data })); // Ajoute les données pour la ville
         }
+        // Met à jour les températures minimales et maximales
         data.forecast.forecastday.map((date) => {
           if (date.date == moment().format("YYYY-MM-DD")) {
             if (gps) {
@@ -114,17 +125,20 @@ function home({ navigation }) {
       });
   }
 
+  // Fonction pour récupérer les villes favorites depuis le stockage local
   async function getFav() {
     await AsyncStorage.getItem("fav").then((value) => {
       if (value) {
         setFavorites(JSON.parse(value));
         setData({});
         JSON.parse(value).map((city) => {
-          search(city);
+          search(city); // Recherche les données météo pour chaque ville favorite
         });
       }
     });
   }
+
+  // Effet pour mettre à jour les favoris lorsque l'écran est affiché
   useEffect(() => {
     const unsubscribe = navigation.addListener("didFocus", () => {
       getFav();
@@ -133,6 +147,7 @@ function home({ navigation }) {
     return () => unsubscribe.remove();
   }, [navigation, data]);
 
+  // Fonction pour obtenir la position GPS de l'utilisateur
   const getGps = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
@@ -144,13 +159,17 @@ function home({ navigation }) {
     setLatLon([location.coords.latitude, location.coords.longitude]);
   };
 
+  // Navigue vers l'écran météo pour une ville donnée
   const goToWeather = (where) => {
     navigation.navigate("Weather", { where: where });
   };
 
+  // Navigue vers l'écran météo pour la position GPS
   const goToWeatherGps = () => {
     navigation.navigate("Weather");
   };
+
+  // Navigue vers l'écran de la carte
   const goToWeatherMap = (mode) => {
     navigation.navigate("Map", {
       map: mode,
@@ -159,8 +178,9 @@ function home({ navigation }) {
     });
   };
 
-  const [where, setWhere] = useState("");
-  const [backButton, setBackButton] = useState(false);
+  // États pour gérer la recherche et l'affichage
+  const [where, setWhere] = useState(""); // Ville recherchée
+  const [backButton, setBackButton] = useState(false); // Affichage du bouton "retour"
 
   const styles = {
     input: {
@@ -190,6 +210,7 @@ function home({ navigation }) {
         marginTop: 50,
       }}
     >
+      {/* Titre et barre de recherche */}
       <View style={{ margin: 20 }}>
         <Text style={styles.title}>Weather</Text>
         <View
@@ -207,7 +228,7 @@ function home({ navigation }) {
               value={where}
               onChangeText={(text) => {
                 setWhere(text);
-                getSugg(text);
+                getSugg(text); // Met à jour les suggestions
               }}
               onSubmitEditing={() => {
                 goToWeather(where), setBackButton(), setSuggestions([]);
@@ -224,6 +245,7 @@ function home({ navigation }) {
             />
           </View>
 
+          {/* Bouton retour */}
           <TouchableOpacity
             style={{
               display: backButton ? "flex" : "none",
@@ -242,6 +264,7 @@ function home({ navigation }) {
         </View>
       </View>
 
+      {/* Affichage des suggestions */}
       <View
         style={{
           backgroundColor: "#000000DF",
@@ -275,6 +298,8 @@ function home({ navigation }) {
             </TouchableOpacity>
           ))}
       </View>
+
+      {/* Affichage des cartes météo */}
       <ScrollView
         style={{ width: "100%", margin: 0 }}
         contentContainerStyle={{

@@ -143,19 +143,25 @@ function weatherPage({ navigation }) {
     await fetch(currentURL)
       .then((response) => response.json())
       .then((data) => {
-        setData(data);
-        setShowdata(true);
+        if (!data.error) {
+          setData(data);
+          setShowdata(true);
 
-        Conditions.map((cond) => {
-          if (cond.code == data.current.condition.code) {
-            setBgColors(cond.gradient);
-          }
-        });
-        data.forecast.forecastday.map((date) => {
-          if (date.date == moment().format("YYYY-MM-DD")) {
-            setMinMax([date.day.mintemp_c, date.day.maxtemp_c]);
-          }
-        });
+          Conditions.map((cond) => {
+            if (cond.code == data.current.condition.code) {
+              setBgColors(cond.gradient);
+            }
+          });
+          data.forecast.forecastday.map((date) => {
+            if (date.date == moment().format("YYYY-MM-DD")) {
+              setMinMax([date.day.mintemp_c, date.day.maxtemp_c]);
+            }
+          });
+        } else {
+          Alert.alert("Error", "Location not found. Please try again.");
+          console.log("Error fetching data: ", data.error.message);
+          navigation.goBack();
+        }
       })
       .catch((error) => {
         console.log("++++++ error ++++++");

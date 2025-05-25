@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import * as Location from "expo-location";
-import { WEATHER_API_KEY } from "@env";
 import "moment/locale/fr";
 import moment from "moment";
 const Conditions = require("../assets/condition.json");
@@ -22,6 +21,7 @@ import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 import { ScrollView } from "react-native";
 
 function home({ navigation }) {
+  const WEATHER_API_KEY = "5f7f2be2f23a4bd395c185814241407";
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [data, setData] = useState(null);

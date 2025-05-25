@@ -4,7 +4,6 @@ import { use, useEffect, useState } from "react";
 import moment from "moment";
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Location from "expo-location";
-import { WEATHER_API_KEY } from "@env";
 import "moment/locale/fr";
 import {
   Alert,
@@ -27,6 +26,8 @@ import MiniMap from "../Components/miniMap";
 import BackButton from "../Components/backBtn";
 
 function weatherPage({ navigation }) {
+  const WEATHER_API_KEY = "5f7f2be2f23a4bd395c185814241407";
+
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [data, setData] = useState(null);
